@@ -1,0 +1,11 @@
+{
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "tasks.max": "1",
+    "database.hostname": "source-db",
+    "database.port": "5432",
+    "database.user": "postgresusersource",
+    "database.password": "postgrespw",
+    "database.dbname": "sourcedb",
+    "topic.prefix": "dbserver1",
+    "snapshot.mode": "never"
+}
