@@ -106,13 +106,32 @@ Delete the source connector and change the snapshot mode to initial in the sourc
 ```shell
 # Terminal 1
 http DELETE http://localhost:8083/connectors/inventory-connector
+```
 
-# Change snapshot.mode in debezium-source.json
+Update a record in the source db
 
+```shell
+# Terminal 2
+sourcedb> update inventory.customers set first_name = 'Brian' where id = 1003;
+sourcedb> select id, first_name, last_name, email from inventory.customers order by id
+
+#Output
++------+--------------+-------------+-----------------------+
+| id   | first_name   | last_name   | email                 |
+|------+--------------+-------------+-----------------------|
+| 1001 | Sally        | Thomas      | sally.thomas@acme.com |
+| 1002 | George       | Bailey      | gbailey@foobar.com    |
+| 1003 | Brian        | Walker      | ed@walker.com         |
+| 1004 | Anne         | Kretchmar   | annek@noanswer.org    |
++------+--------------+-------------+-----------------------+
+```
+
+```shell
+# Terminal 1
+# Change snapshot.mode in debezium-source.json to initial
 http PUT http://localhost:8083/connectors/inventory-connector/config < debezium-source.json
 
 # Output
-
 {
     "config": {
         "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
@@ -132,6 +151,8 @@ http PUT http://localhost:8083/connectors/inventory-connector/config < debezium-
 }
 ```
 
+Examine the sink DB and notice that Edward is not present
+
 ```shell
 # Terminal 3
 sinkdb> select id, first_name, last_name, email, __deleted, __lsn, __op, __source_ts_ms from inventorysink.customers order by __source_ts_ms asc
@@ -142,7 +163,7 @@ sinkdb> select id, first_name, last_name, email, __deleted, __lsn, __op, __sourc
 |------+--------------+-------------+-----------------------+-------------+----------+--------+------------------|
 | 1001 | Sally        | Thomas      | sally.thomas@acme.com | false       | 38124712 | r      | 1686500174119    |
 | 1002 | George       | Bailey      | gbailey@foobar.com    | false       | 38124712 | r      | 1686500174119    |
-| 1003 | Edward       | Walker      | ed@walker.com         | false       | 38124712 | r      | 1686500174119    |
+| 1003 | Brian        | Walker      | ed@walker.com         | false       | 38124712 | r      | 1686500174119    |
 | 1004 | Anne         | Kretchmar   | annek@noanswer.org    | false       | 38124712 | r      | 1686500174119    |
 +------+--------------+-------------+-----------------------+-------------+----------+--------+------------------+
 ```
@@ -161,7 +182,7 @@ sourcedb> select id, first_name, last_name, email from inventory.customers
 +------+--------------+-------------+-----------------------+
 | id   | first_name   | last_name   | email                 |
 |------+--------------+-------------+-----------------------|
-| 1003 | Edward       | Walker      | ed@walker.com         |
+| 1003 | Brian        | Walker      | ed@walker.com         |
 | 1004 | Anne         | Kretchmar   | annek@noanswer.org    |
 | 1001 | Dana         | Thomas      | sally.thomas@acme.com |
 | 1005 | Tim          | Burton      | tim@burton.com        |
@@ -178,7 +199,7 @@ sinkdb> select id, first_name, last_name, email, __deleted, __lsn, __op, __sourc
 |------+--------------+-------------+-----------------------+-------------+----------+--------+------------------|
 | 1001 | Sally        | Thomas      | sally.thomas@acme.com | false       | 38124712 | r      | 1686500174119    |
 | 1002 | George       | Bailey      | gbailey@foobar.com    | false       | 38124712 | r      | 1686500174119    |
-| 1003 | Edward       | Walker      | ed@walker.com         | false       | 38124712 | r      | 1686500174119    |
+| 1003 | Brian        | Walker      | ed@walker.com         | false       | 38124712 | r      | 1686500174119    |
 | 1004 | Anne         | Kretchmar   | annek@noanswer.org    | false       | 38124712 | r      | 1686500174119    |
 | 1001 | Dana         | Thomas      | sally.thomas@acme.com | false       | 38125760 | u      | 1686500443536    |
 | 1002 |              |             |                       | true        | 38126440 | d      | 1686500453631    |
@@ -223,7 +244,7 @@ sinkdb> select id, first_name, last_name, email, __deleted, __lsn, __op, __sourc
 |------+--------------+-------------+-----------------------+-------------+----------+--------+------------------|
 | 1001 | Sally        | Thomas      | sally.thomas@acme.com | false       | 38124712 | r      | 1686500174119    |
 | 1002 | George       | Bailey      | gbailey@foobar.com    | false       | 38124712 | r      | 1686500174119    |
-| 1003 | Edward       | Walker      | ed@walker.com         | false       | 38124712 | r      | 1686500174119    |
+| 1003 | Brian        | Walker      | ed@walker.com         | false       | 38124712 | r      | 1686500174119    |
 | 1004 | Anne         | Kretchmar   | annek@noanswer.org    | false       | 38124712 | r      | 1686500174119    |
 | 1001 | Dana         | Thomas      | sally.thomas@acme.com | false       | 38125760 | u      | 1686500443536    |
 | 1002 |              |             |                       | true        | 38126440 | d      | 1686500453631    |
@@ -267,7 +288,7 @@ sinkdb> select id, first_name, last_name, email, __deleted, __lsn, __op, __sourc
 |------+--------------+-------------+-----------------------+-------------+----------+--------+------------------|
 | 1001 | Sally        | Thomas      | sally.thomas@acme.com | false       | 38124712 | r      | 1686500174119    |
 | 1002 | George       | Bailey      | gbailey@foobar.com    | false       | 38124712 | r      | 1686500174119    |
-| 1003 | Edward       | Walker      | ed@walker.com         | false       | 38124712 | r      | 1686500174119    |
+| 1003 | Brian        | Walker      | ed@walker.com         | false       | 38124712 | r      | 1686500174119    |
 | 1004 | Anne         | Kretchmar   | annek@noanswer.org    | false       | 38124712 | r      | 1686500174119    |
 | 1001 | Dana         | Thomas      | sally.thomas@acme.com | false       | 38125760 | u      | 1686500443536    |
 | 1002 |              |             |                       | true        | 38126440 | d      | 1686500453631    |
@@ -300,7 +321,7 @@ sourcedb> select id, first_name, last_name, email from inventory.customers
 +------+--------------+-------------+--------------------+
 | id   | first_name   | last_name   | email              |
 |------+--------------+-------------+--------------------|
-| 1003 | Edward       | Walker      | ed@walker.com      |
+| 1003 | Brian        | Walker      | ed@walker.com      |
 | 1004 | Anne         | Kretchmar   | annek@noanswer.org |
 | 1005 | Tim          | Burton      | tim@burton.com     |
 | 1006 | Jack-2       | Bower       | jack@bower.com     |
@@ -345,7 +366,7 @@ sinkdb> select id, first_name, last_name, email, __deleted, __lsn, __op, __sourc
 |------+--------------+-------------+-----------------------+-------------+----------+--------+------------------|
 | 1001 | Sally        | Thomas      | sally.thomas@acme.com | false       | 38124712 | r      | 1686500174119    |
 | 1002 | George       | Bailey      | gbailey@foobar.com    | false       | 38124712 | r      | 1686500174119    |
-| 1003 | Edward       | Walker      | ed@walker.com         | false       | 38124712 | r      | 1686500174119    |
+| 1003 | Brian        | Walker      | ed@walker.com         | false       | 38124712 | r      | 1686500174119    |
 | 1004 | Anne         | Kretchmar   | annek@noanswer.org    | false       | 38124712 | r      | 1686500174119    |
 | 1001 | Dana         | Thomas      | sally.thomas@acme.com | false       | 38125760 | u      | 1686500443536    |
 | 1002 |              |             |                       | true        | 38126440 | d      | 1686500453631    |
@@ -353,7 +374,7 @@ sinkdb> select id, first_name, last_name, email, __deleted, __lsn, __op, __sourc
 | 1001 | Dana-1       | Thomas      | sally.thomas@acme.com | false       | 38140024 | u      | 1686500530106    |
 | 1001 | Dana-2       | Thomas      | sally.thomas@acme.com | false       | 38140312 | u      | 1686500533780    |
 | 1001 | Dana-3       | Thomas      | sally.thomas@acme.com | false       | 38140544 | u      | 1686500537549    |
-| 1003 | Edward       | Walker      | ed@walker.com         | false       | 38179664 | r      | 1686500777247    |
+| 1003 | Brian        | Walker      | ed@walker.com         | false       | 38179664 | r      | 1686500777247    |
 | 1004 | Anne         | Kretchmar   | annek@noanswer.org    | false       | 38179664 | r      | 1686500777247    |
 | 1005 | Tim          | Burton      | tim@burton.com        | false       | 38179664 | r      | 1686500777247    |
 | 1006 | Jack-2       | Bower       | jack@bower.com        | false       | 38179664 | r      | 1686500777247    |
@@ -379,7 +400,7 @@ sourcedb> select id, first_name, last_name, email from inventory.customers
 +------+--------------+-------------+----------------------+
 | id   | first_name   | last_name   | email                |
 |------+--------------+-------------+----------------------|
-| 1003 | Edward       | Walker      | ed@walker.com        |
+| 1003 | Brian        | Walker      | ed@walker.com        |
 | 1005 | Tim          | Burton      | tim@burton.com       |
 | 1006 | Jack-2       | Bower       | jack@bower.com       |
 | 1004 | Anne-3       | Kretchmar   | annek@noanswer.org   |
@@ -423,7 +444,7 @@ sinkdb> select id, first_name, last_name, email, __deleted, __lsn, __op, __sourc
 |------+--------------+-------------+-----------------------+-------------+----------+--------+------------------|
 | 1001 | Sally        | Thomas      | sally.thomas@acme.com | false       | 38124712 | r      | 1686500174119    |
 | 1002 | George       | Bailey      | gbailey@foobar.com    | false       | 38124712 | r      | 1686500174119    |
-| 1003 | Edward       | Walker      | ed@walker.com         | false       | 38124712 | r      | 1686500174119    |
+| 1003 | Brian        | Walker      | ed@walker.com         | false       | 38124712 | r      | 1686500174119    |
 | 1004 | Anne         | Kretchmar   | annek@noanswer.org    | false       | 38124712 | r      | 1686500174119    |
 | 1001 | Dana         | Thomas      | sally.thomas@acme.com | false       | 38125760 | u      | 1686500443536    |
 | 1002 |              |             |                       | true        | 38126440 | d      | 1686500453631    |
@@ -431,7 +452,7 @@ sinkdb> select id, first_name, last_name, email, __deleted, __lsn, __op, __sourc
 | 1001 | Dana-1       | Thomas      | sally.thomas@acme.com | false       | 38140024 | u      | 1686500530106    |
 | 1001 | Dana-2       | Thomas      | sally.thomas@acme.com | false       | 38140312 | u      | 1686500533780    |
 | 1001 | Dana-3       | Thomas      | sally.thomas@acme.com | false       | 38140544 | u      | 1686500537549    |
-| 1003 | Edward       | Walker      | ed@walker.com         | false       | 38179664 | r      | 1686500777247    |
+| 1003 | Brian        | Walker      | ed@walker.com         | false       | 38179664 | r      | 1686500777247    |
 | 1004 | Anne         | Kretchmar   | annek@noanswer.org    | false       | 38179664 | r      | 1686500777247    |
 | 1005 | Tim          | Burton      | tim@burton.com        | false       | 38179664 | r      | 1686500777247    |
 | 1006 | Jack-2       | Bower       | jack@bower.com        | false       | 38179664 | r      | 1686500777247    |
