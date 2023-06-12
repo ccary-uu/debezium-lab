@@ -463,6 +463,60 @@ sinkdb> select id, first_name, last_name, email, __deleted, __lsn, __op, __sourc
 +------+--------------+-------------+-----------------------+-------------+----------+--------+------------------+
 ```
 
+When we have multiple updates within a commit the __source_ts_ms will be same for all of the commits
+
+```shell
+# Terminal 2
+sourcedb> BEGIN;
+sourcedb> update inventory.customers set first_name = 'Jonny-1' where id = 1007;
+sourcedb> update inventory.customers set first_name = 'Jonny-2' where id = 1007;
+sourcedb> update inventory.customers set first_name = 'Jonny-3' where id = 1007;
+sourcedb> COMMIT;
+sourcedb> select id, first_name, last_name, email from inventory.customers
+
+# Output
++------+--------------+-------------+----------------------+
+| id   | first_name   | last_name   | email                |
+|------+--------------+-------------+----------------------|
+| 1003 | Brian        | Walker      | ed@walker.com        |
+| 1005 | Tim          | Burton      | tim@burton.com       |
+| 1006 | Jack-2       | Bauer       | jack@bauer.com       |
+| 1004 | Anne-3       | Kretchmar   | annek@noanswer.org   |
+| 1007 | Jonny-3      | Knoxville   | jonny@knoxville.com  |
++------+--------------+-------------+----------------------+
+```
+
+```shell
+# Terminal 3
+sinkdb> select id, first_name, last_name, email, __deleted, __lsn, __op, __source_ts_ms from inventorysink.customers order by __source_ts_ms asc
+
++------+--------------+-------------+-----------------------+-------------+----------+--------+------------------+
+| id   | first_name   | last_name   | email                 | __deleted   | __lsn    | __op   | __source_ts_ms   |
+|------+--------------+-------------+-----------------------+-------------+----------+--------+------------------|
+| 1001 | Sally        | Thomas      | sally.thomas@acme.com | false       | 38124712 | r      | 1686500174119    |
+| 1002 | George       | Bailey      | gbailey@foobar.com    | false       | 38124712 | r      | 1686500174119    |
+| 1003 | Brian        | Walker      | ed@walker.com         | false       | 38124712 | r      | 1686500174119    |
+| 1004 | Anne         | Kretchmar   | annek@noanswer.org    | false       | 38124712 | r      | 1686500174119    |
+| 1001 | Dana         | Thomas      | sally.thomas@acme.com | false       | 38125760 | u      | 1686500443536    |
+| 1002 |              |             |                       | true        | 38126440 | d      | 1686500453631    |
+| 1005 | Tim          | Burton      | tim@burton.com        | false       | 38139312 | c      | 1686500458280    |
+| 1001 | Dana-1       | Thomas      | sally.thomas@acme.com | false       | 38140024 | u      | 1686500530106    |
+| 1001 | Dana-2       | Thomas      | sally.thomas@acme.com | false       | 38140312 | u      | 1686500533780    |
+| 1001 | Dana-3       | Thomas      | sally.thomas@acme.com | false       | 38140544 | u      | 1686500537549    |
+| 1003 | Brian        | Walker      | ed@walker.com         | false       | 38179664 | r      | 1686500777247    |
+| 1004 | Anne         | Kretchmar   | annek@noanswer.org    | false       | 38179664 | r      | 1686500777247    |
+| 1005 | Tim          | Burton      | tim@burton.com        | false       | 38179664 | r      | 1686500777247    |
+| 1006 | Jack-2       | Bauer       | jack@bauer.com        | false       | 38179664 | r      | 1686500777247    |
+| 1004 | Anne-1       | Kretchmar   | annek@noanswer.org    | false       | 38181440 | u      | 1686500982755    |
+| 1004 | Anne-2       | Kretchmar   | annek@noanswer.org    | false       | 38181672 | u      | 1686500986795    |
+| 1004 | Anne-3       | Kretchmar   | annek@noanswer.org    | false       | 38181960 | u      | 1686500990077    |
+| 1007 | Jonny        | Knoxville   | jonny@knoxville.com   | false       | 38182480 | c      | 1686501025056    |
+| 1007 | Jonny-1      | Knoxville   | jonny@knoxville.com   | false       | 38183420 | u      | 1686502055052    |
+| 1007 | Jonny-2      | Knoxville   | jonny@knoxville.com   | false       | 38183640 | u      | 1686502055052    |
+| 1007 | Jonny-3      | Knoxville   | jonny@knoxville.com   | false       | 38183880 | u      | 1686502055052    |
++------+--------------+-------------+-----------------------+-------------+----------+--------+------------------+
+```
+
 Lastly we will create an "Adhoc" snapshot
 
 ```shell
@@ -496,11 +550,14 @@ sinkdb> select id, first_name, last_name, email, __deleted, __lsn, __op, __sourc
 | 1004 | Anne-2       | Kretchmar   | annek@noanswer.org    | false       | 38181672 | u      | 1686500986795    |
 | 1004 | Anne-3       | Kretchmar   | annek@noanswer.org    | false       | 38181960 | u      | 1686500990077    |
 | 1007 | Jonny        | Knoxville   | jonny@knoxville.com   | false       | 38182480 | c      | 1686501025056    |
+| 1007 | Jonny-1      | Knoxville   | jonny@knoxville.com   | false       | 38183420 | u      | 1686502055052    |
+| 1007 | Jonny-2      | Knoxville   | jonny@knoxville.com   | false       | 38183640 | u      | 1686502055052    |
+| 1007 | Jonny-3      | Knoxville   | jonny@knoxville.com   | false       | 38183880 | u      | 1686502055052    |
 | 1003 | Brian        | Walker      | ed@walker.com         | false       | <null>   | r      | 1686594314204    |
 | 1004 | Anne-3       | Kretchmar   | annek@noanswer.org    | false       | <null>   | r      | 1686594314205    |
 | 1005 | Tim          | Burton      | tim@burton.com        | false       | <null>   | r      | 1686594314205    |
 | 1006 | Jack-2       | Bauer       | jack@bauer.com        | false       | <null>   | r      | 1686594314205    |
-| 1007 | Jonny        | Knoxville   | jonny@knoxville.com   | false       | <null>   | r      | 1686594314205    |
+| 1007 | Jonny-3      | Knoxville   | jonny@knoxville.com   | false       | <null>   | r      | 1686594314205    |
 +------+--------------+-------------+-----------------------+-------------+----------+--------+------------------+
 ```
 
