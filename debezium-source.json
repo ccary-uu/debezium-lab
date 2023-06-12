@@ -6,6 +6,7 @@
     "database.user": "postgresusersource",
     "database.password": "postgrespw",
     "database.dbname": "sourcedb",
+    "signal.data.collection": "inventory.debezium_signals",
     "topic.prefix": "dbserver1",
     "snapshot.mode": "never"
 }

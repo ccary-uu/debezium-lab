@@ -57,8 +57,6 @@ services:
       - kafka
       - source-db
       - sink-db
-      - debezium-ui
-      - kafka-ui
       #- schema-registry
     environment:
       - BOOTSTRAP_SERVERS=kafka:9092
@@ -86,6 +84,8 @@ services:
     image: quay.io/debezium/debezium-ui:${DEBEZIUM_VERSION}
     ports:
       - "8080:8080"
+    links:
+      - connect
     environment:
       - KAFKA_CONNECT_URIS=http://connect:8083
   kafka-ui:
@@ -93,6 +93,8 @@ services:
     image: provectuslabs/kafka-ui:latest
     ports:
       - 8081:8080
+    links:
+      - connect
     environment:
       DYNAMIC_CONFIG_ENABLED: 'true'
       KAFKA_CLUSTERS_0_NAME: debezium

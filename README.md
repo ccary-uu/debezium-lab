@@ -313,7 +313,7 @@ sourcedb> update inventory.customers set first_name = 'Dana-5' where id = 1001;
 sourcedb> update inventory.customers set first_name = 'Dana-6' where id = 1001;
 sourcedb> delete from inventory.orders where purchaser = 1001;
 sourcedb> delete from inventory.customers where id = 1001;
-sourcedb> INSERT INTO inventory.customers (id, first_name, last_name, email) VALUES (1006, 'Jack', 'Bower', 'jack@bower.com');
+sourcedb> INSERT INTO inventory.customers (id, first_name, last_name, email) VALUES (1006, 'Jack', 'Bauer', 'jack@bauer.com');
 sourcedb> update inventory.customers set first_name = 'Jack-2' where id = 1006;
 sourcedb> select id, first_name, last_name, email from inventory.customers 
 
@@ -324,7 +324,7 @@ sourcedb> select id, first_name, last_name, email from inventory.customers
 | 1003 | Brian        | Walker      | ed@walker.com      |
 | 1004 | Anne         | Kretchmar   | annek@noanswer.org |
 | 1005 | Tim          | Burton      | tim@burton.com     |
-| 1006 | Jack-2       | Bower       | jack@bower.com     |
+| 1006 | Jack-2       | Bauer       | jack@bauer.com     |
 +------+--------------+-------------+--------------------+
 ```
 
@@ -377,7 +377,7 @@ sinkdb> select id, first_name, last_name, email, __deleted, __lsn, __op, __sourc
 | 1003 | Brian        | Walker      | ed@walker.com         | false       | 38179664 | r      | 1686500777247    |
 | 1004 | Anne         | Kretchmar   | annek@noanswer.org    | false       | 38179664 | r      | 1686500777247    |
 | 1005 | Tim          | Burton      | tim@burton.com        | false       | 38179664 | r      | 1686500777247    |
-| 1006 | Jack-2       | Bower       | jack@bower.com        | false       | 38179664 | r      | 1686500777247    |
+| 1006 | Jack-2       | Bauer       | jack@bauer.com        | false       | 38179664 | r      | 1686500777247    |
 +------+--------------+-------------+-----------------------+-------------+----------+--------+------------------+
 ```
 
@@ -393,7 +393,7 @@ http DELETE http://localhost:8083/connectors/inventory-connector-2
 sourcedb> update inventory.customers set first_name = 'Anne-1' where id = 1004;
 sourcedb> update inventory.customers set first_name = 'Anne-2' where id = 1004;
 sourcedb> update inventory.customers set first_name = 'Anne-3' where id = 1004;
-sourcedb> INSERT INTO inventory.customers (id, first_name, last_name, email) VALUES (1007, 'Jonnie', 'Knoxville', 'jonnie@knoxville.com');
+sourcedb> INSERT INTO inventory.customers (id, first_name, last_name, email) VALUES (1007, 'Jonny', 'Knoxville', 'jonny@knoxville.com');
 sourcedb> select id, first_name, last_name, email from inventory.customers
 
 #Output
@@ -402,9 +402,9 @@ sourcedb> select id, first_name, last_name, email from inventory.customers
 |------+--------------+-------------+----------------------|
 | 1003 | Brian        | Walker      | ed@walker.com        |
 | 1005 | Tim          | Burton      | tim@burton.com       |
-| 1006 | Jack-2       | Bower       | jack@bower.com       |
+| 1006 | Jack-2       | Bauer       | jack@bauer.com       |
 | 1004 | Anne-3       | Kretchmar   | annek@noanswer.org   |
-| 1007 | Jonnie       | Knoxville   | jonnie@knoxville.com |
+| 1007 | Jonny        | Knoxville   | jonny@knoxville.com  |
 +------+--------------+-------------+----------------------+
 ```
 
@@ -455,11 +455,52 @@ sinkdb> select id, first_name, last_name, email, __deleted, __lsn, __op, __sourc
 | 1003 | Brian        | Walker      | ed@walker.com         | false       | 38179664 | r      | 1686500777247    |
 | 1004 | Anne         | Kretchmar   | annek@noanswer.org    | false       | 38179664 | r      | 1686500777247    |
 | 1005 | Tim          | Burton      | tim@burton.com        | false       | 38179664 | r      | 1686500777247    |
-| 1006 | Jack-2       | Bower       | jack@bower.com        | false       | 38179664 | r      | 1686500777247    |
+| 1006 | Jack-2       | Bauer       | jack@bauer.com        | false       | 38179664 | r      | 1686500777247    |
 | 1004 | Anne-1       | Kretchmar   | annek@noanswer.org    | false       | 38181440 | u      | 1686500982755    |
 | 1004 | Anne-2       | Kretchmar   | annek@noanswer.org    | false       | 38181672 | u      | 1686500986795    |
 | 1004 | Anne-3       | Kretchmar   | annek@noanswer.org    | false       | 38181960 | u      | 1686500990077    |
-| 1007 | Jonnie       | Knoxville   | jonnie@knoxville.com  | false       | 38182480 | c      | 1686501025056    |
+| 1007 | Jonny        | Knoxville   | jonny@knoxville.com   | false       | 38182480 | c      | 1686501025056    |
++------+--------------+-------------+-----------------------+-------------+----------+--------+------------------+
+```
+
+Lastly we will create an "Adhoc" snapshot
+
+```shell
+# Terminal 2
+sourcedb> insert into inventory.debezium_signals (type,data) select 'execute-snapshot','  {"data-collections": ["inventory.customers"]}'
+```
+
+```shell
+# Terminal 3
+sinkdb> select id, first_name, last_name, email, __deleted, __lsn, __op, __source_ts_ms from inventorysink.customers order by __source_ts_ms asc
+
+# Output
++------+--------------+-------------+-----------------------+-------------+----------+--------+------------------+
+| id   | first_name   | last_name   | email                 | __deleted   | __lsn    | __op   | __source_ts_ms   |
+|------+--------------+-------------+-----------------------+-------------+----------+--------+------------------|
+| 1001 | Sally        | Thomas      | sally.thomas@acme.com | false       | 38124712 | r      | 1686500174119    |
+| 1002 | George       | Bailey      | gbailey@foobar.com    | false       | 38124712 | r      | 1686500174119    |
+| 1003 | Brian        | Walker      | ed@walker.com         | false       | 38124712 | r      | 1686500174119    |
+| 1004 | Anne         | Kretchmar   | annek@noanswer.org    | false       | 38124712 | r      | 1686500174119    |
+| 1001 | Dana         | Thomas      | sally.thomas@acme.com | false       | 38125760 | u      | 1686500443536    |
+| 1002 |              |             |                       | true        | 38126440 | d      | 1686500453631    |
+| 1005 | Tim          | Burton      | tim@burton.com        | false       | 38139312 | c      | 1686500458280    |
+| 1001 | Dana-1       | Thomas      | sally.thomas@acme.com | false       | 38140024 | u      | 1686500530106    |
+| 1001 | Dana-2       | Thomas      | sally.thomas@acme.com | false       | 38140312 | u      | 1686500533780    |
+| 1001 | Dana-3       | Thomas      | sally.thomas@acme.com | false       | 38140544 | u      | 1686500537549    |
+| 1003 | Brian        | Walker      | ed@walker.com         | false       | 38179664 | r      | 1686500777247    |
+| 1004 | Anne         | Kretchmar   | annek@noanswer.org    | false       | 38179664 | r      | 1686500777247    |
+| 1005 | Tim          | Burton      | tim@burton.com        | false       | 38179664 | r      | 1686500777247    |
+| 1006 | Jack-2       | Bauer       | jack@bauer.com        | false       | 38179664 | r      | 1686500777247    |
+| 1004 | Anne-1       | Kretchmar   | annek@noanswer.org    | false       | 38181440 | u      | 1686500982755    |
+| 1004 | Anne-2       | Kretchmar   | annek@noanswer.org    | false       | 38181672 | u      | 1686500986795    |
+| 1004 | Anne-3       | Kretchmar   | annek@noanswer.org    | false       | 38181960 | u      | 1686500990077    |
+| 1007 | Jonny        | Knoxville   | jonny@knoxville.com   | false       | 38182480 | c      | 1686501025056    |
+| 1003 | Brian        | Walker      | ed@walker.com         | false       | <null>   | r      | 1686594314204    |
+| 1004 | Anne-3       | Kretchmar   | annek@noanswer.org    | false       | <null>   | r      | 1686594314205    |
+| 1005 | Tim          | Burton      | tim@burton.com        | false       | <null>   | r      | 1686594314205    |
+| 1006 | Jack-2       | Bauer       | jack@bauer.com        | false       | <null>   | r      | 1686594314205    |
+| 1007 | Jonny        | Knoxville   | jonny@knoxville.com   | false       | <null>   | r      | 1686594314205    |
 +------+--------------+-------------+-----------------------+-------------+----------+--------+------------------+
 ```
 
