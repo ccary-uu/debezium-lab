@@ -71,7 +71,7 @@ In separate terminals, start the pgcli for the source and the sink
 # Terminal 2
 docker run --tty --rm -i \
     --network debezium-lab_default \
-    quay.io/debezium/tooling:1.2 \
+    debezium/tooling:1.2 \
     bash -c 'pgcli postgresql://postgresusersource:postgrespw@source-db:5432/sourcedb'
 
 sourcedb> select id, first_name, last_name, email from inventory.customers
@@ -91,7 +91,7 @@ sourcedb> select id, first_name, last_name, email from inventory.customers
 # Terminal 3
 docker run --tty --rm -i \
     --network debezium-lab_default \
-    quay.io/debezium/tooling:1.2 \
+    debezium/tooling:1.2 \
     bash -c 'pgcli postgresql://postgresusersink:postgrespw@sink-db:5432/sinkdb'
 
 sinkdb> select id, first_name, last_name, email, __deleted, __lsn, __op, __source_ts_ms from inventorysink.customers order by __source_ts_ms asc
