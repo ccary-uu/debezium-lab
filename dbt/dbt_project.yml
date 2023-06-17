@@ -1,0 +1,15 @@
+name: "debezium_lab"
+version: "1.0.0"
+config-version: 2
+
+profile: "debezium_lab"
+
+model-paths: ["models"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  +on_schema_change: "append_new_columns"

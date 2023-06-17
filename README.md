@@ -101,6 +101,8 @@ relation "inventorysink.customers" does not exist
 LINE 1: ...mail, __deleted, __lsn, __op, __source_ts_ms from inventorys...
 ```
 
+## Initial Snapshots vs Never
+
 Delete the source connector and change the snapshot mode to initial in the source connector config and recreate
 
 ```shell
@@ -463,27 +465,29 @@ sinkdb> select id, first_name, last_name, email, __deleted, __lsn, __op, __sourc
 +------+--------------+-------------+-----------------------+-------------+----------+--------+------------------+
 ```
 
+## Commits
+
 When we have multiple updates within a commit the __source_ts_ms will be same for all of the commits
 
 ```shell
 # Terminal 2
 sourcedb> BEGIN;
 sourcedb> update inventory.customers set first_name = 'Jonny-1' where id = 1007;
-sourcedb> update inventory.customers set first_name = 'Jonny-2' where id = 1007;
-sourcedb> update inventory.customers set first_name = 'Jonny-3' where id = 1007;
+sourcedb> update inventory.customers set last_name = 'Knoxville-1' where id = 1007;
+sourcedb> update inventory.customers set first_name = 'jonny@knoxville.com-1' where id = 1007;
 sourcedb> COMMIT;
 sourcedb> select id, first_name, last_name, email from inventory.customers
 
 # Output
-+------+--------------+-------------+----------------------+
-| id   | first_name   | last_name   | email                |
-|------+--------------+-------------+----------------------|
-| 1003 | Brian        | Walker      | ed@walker.com        |
-| 1005 | Tim          | Burton      | tim@burton.com       |
-| 1006 | Jack-2       | Bauer       | jack@bauer.com       |
-| 1004 | Anne-3       | Kretchmar   | annek@noanswer.org   |
-| 1007 | Jonny-3      | Knoxville   | jonny@knoxville.com  |
-+------+--------------+-------------+----------------------+
++------+--------------+-------------+-----------------------+
+| id   | first_name   | last_name   | email                 |
+|------+--------------+-------------+-----------------------|
+| 1003 | Brian        | Walker      | ed@walker.com         |
+| 1005 | Tim          | Burton      | tim@burton.com        |
+| 1006 | Jack-2       | Bauer       | jack@bauer.com        |
+| 1004 | Anne-3       | Kretchmar   | annek@noanswer.org    |
+| 1007 | Jonny-1      | Knoxville-1 | jonny@knoxville.com-1 |
++------+--------------+-------------+-----------------------+
 ```
 
 ```shell
@@ -512,10 +516,16 @@ sinkdb> select id, first_name, last_name, email, __deleted, __lsn, __op, __sourc
 | 1004 | Anne-3       | Kretchmar   | annek@noanswer.org    | false       | 38181960 | u      | 1686500990077    |
 | 1007 | Jonny        | Knoxville   | jonny@knoxville.com   | false       | 38182480 | c      | 1686501025056    |
 | 1007 | Jonny-1      | Knoxville   | jonny@knoxville.com   | false       | 38183420 | u      | 1686502055052    |
-| 1007 | Jonny-2      | Knoxville   | jonny@knoxville.com   | false       | 38183640 | u      | 1686502055052    |
-| 1007 | Jonny-3      | Knoxville   | jonny@knoxville.com   | false       | 38183880 | u      | 1686502055052    |
+| 1007 | Jonny-1      | Knoxville-1 | jonny@knoxville.com   | false       | 38183640 | u      | 1686502055052    |
+| 1007 | Jonny-1      | Knoxville-1 | jonny@knoxville.com-1 | false       | 38183880 | u      | 1686502055052    |
 +------+--------------+-------------+-----------------------+-------------+----------+--------+------------------+
+
+
+sinkdb> select distinct on (id, __source_ts_ms) id, first_name, last_name, email, __deleted, __lsn, __op, __source_ts_ms from inventorysink.customers order by id, __source_ts_ms, __source_ts_ms DESC)
+
 ```
+
+## Adhoc Snapshots
 
 Lastly we will create an "Adhoc" snapshot
 

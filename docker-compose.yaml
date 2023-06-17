@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 services:
   zookeeper:
     image: debezium/zookeeper:${DEBEZIUM_VERSION}
@@ -99,3 +99,18 @@ services:
       DYNAMIC_CONFIG_ENABLED: 'true'
       KAFKA_CLUSTERS_0_NAME: debezium
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+  dbt:
+    image: ghcr.io/dbt-labs/dbt-postgres:1.5.1
+    command: docs serve --port 8001
+    working_dir: /home/dbt
+    links:
+      - sink-db
+    volumes:
+      - ./dbt:/home/dbt
+    ports:
+      - "8001:8001"
+    environment:
+      - DBT_DB_NAME=sinkdb
+      - DBT_USER=postgresusersink
+      - DBT_PASS=postgrespw
+      - DBT_HOST=sink-db

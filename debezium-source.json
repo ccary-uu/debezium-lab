@@ -8,5 +8,5 @@
     "database.dbname": "sourcedb",
     "signal.data.collection": "inventory.debezium_signals",
     "topic.prefix": "dbserver1",
-    "snapshot.mode": "never"
+    "snapshot.mode": "initial"
 }

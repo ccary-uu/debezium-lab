@@ -1,0 +1,16 @@
+config:
+  partial_parse: true
+
+debezium_lab:
+  outputs:
+    dev:
+      type: postgres
+      threads: 3
+      host: "{{ env_var('DBT_HOST', '') }}"
+      port: 5432
+      user: "{{ env_var('DBT_USER', '') }}"
+      pass: "{{ env_var('DBT_PASS', '') }}"
+      dbname: "{{ env_var('DBT_DB_NAME', 'sinkdb') }}"
+      schema: "{{ env_var('DBT_DB_SCHEMA', 'dbt') }}"
+
+  target: dev
