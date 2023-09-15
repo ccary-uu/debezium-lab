@@ -13,3 +13,9 @@ clean-targets:
 
 models:
   +on_schema_change: "append_new_columns"
+  enabled: "{{ (var('enabled', '') == true) | as_bool }}"
+  debezium_lab:
+    customers:
+      alias: "{{ 'dd_' + var('customer') + '_customer' }}"
+    people:
+      alias: "{{ 'dd_' + var('customer') + '_people' }}"

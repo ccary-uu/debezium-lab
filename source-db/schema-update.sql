@@ -3,6 +3,14 @@ SET SCHEMA 'inventory';
 ALTER TABLE customers REPLICA IDENTITY DEFAULT;
 ALTER TABLE customers ADD COLUMN biography TEXT;
 ALTER TABLE customers ALTER COLUMN biography SET STORAGE EXTERNAL;
+ALTER TABLE customers ADD COLUMN updated_at TIMESTAMP;
+ALTER TABLE customers ADD COLUMN updated_at_2 TIMESTAMP default now();
+
+CREATE EXTENSION IF NOT EXISTS moddatetime;
+CREATE TRIGGER updated_at_customers
+    BEFORE UPDATE ON customers
+    FOR EACH ROW
+    EXECUTE PROCEDURE moddatetime(updated_at);
 
 create table debezium_signals(
     id   varchar(42) default gen_random_uuid() not null primary key,
